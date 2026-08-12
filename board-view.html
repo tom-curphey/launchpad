@@ -1,0 +1,688 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Launchpad Board View</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: #0a0a0f;
+            color: #e2e2e2;
+            padding: 20px;
+        }
+
+        .header {
+            margin-bottom: 24px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid #2a2a35;
+        }
+
+        .header h1 {
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .header p {
+            color: #888;
+            font-size: 14px;
+        }
+
+        .parallel-note {
+            margin-top: 12px;
+            padding: 12px 16px;
+            background: rgba(99, 102, 241, 0.1);
+            border: 1px solid rgba(99, 102, 241, 0.3);
+            border-radius: 8px;
+            font-size: 13px;
+            color: #a5b4fc;
+        }
+
+        .parallel-note strong {
+            color: #818cf8;
+        }
+
+        .github-note {
+            margin-top: 8px;
+            padding: 10px 16px;
+            background: rgba(34, 197, 94, 0.1);
+            border: 1px solid rgba(34, 197, 94, 0.3);
+            border-radius: 8px;
+            font-size: 13px;
+            color: #86efac;
+        }
+
+        .github-note strong {
+            color: #4ade80;
+        }
+
+        .board {
+            display: flex;
+            gap: 16px;
+            overflow-x: auto;
+            padding-bottom: 20px;
+        }
+
+        .column {
+            min-width: 280px;
+            max-width: 280px;
+            background: #141419;
+            border-radius: 12px;
+            border: 1px solid #2a2a35;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+
+        .column.parallel {
+            border-color: rgba(99, 102, 241, 0.4);
+        }
+
+        .column.parallel::before {
+            content: "Can run in parallel";
+            position: absolute;
+            top: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: linear-gradient(90deg, #6366f1, #8b5cf6);
+            color: white;
+            font-size: 10px;
+            font-weight: 600;
+            padding: 4px 10px;
+            border-radius: 12px;
+            white-space: nowrap;
+        }
+
+        .column-header {
+            padding: 16px;
+            border-bottom: 1px solid #2a2a35;
+            background: #1a1a23;
+            border-radius: 12px 12px 0 0;
+        }
+
+        .column-title {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 6px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .column-meta {
+            font-size: 12px;
+            color: #888;
+        }
+
+        .progress-bar {
+            height: 4px;
+            background: #2a2a35;
+            border-radius: 2px;
+            margin-top: 8px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #6366f1, #8b5cf6);
+            border-radius: 2px;
+            transition: width 0.3s ease;
+        }
+
+        .tickets {
+            padding: 12px;
+            flex: 1;
+            overflow-y: auto;
+            max-height: calc(100vh - 200px);
+        }
+
+        .ticket {
+            background: #1a1a23;
+            border: 1px solid #2a2a35;
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .ticket:hover {
+            border-color: #3a3a4a;
+            transform: translateY(-1px);
+        }
+
+        .ticket-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: start;
+            margin-bottom: 6px;
+        }
+
+        .ticket-id {
+            font-size: 11px;
+            font-weight: 600;
+            color: #6366f1;
+        }
+
+        .ticket-title {
+            font-size: 13px;
+            font-weight: 500;
+            line-height: 1.4;
+            margin-bottom: 6px;
+        }
+
+        .ticket-meta {
+            font-size: 11px;
+            color: #888;
+        }
+
+        .dep-badge {
+            font-size: 10px;
+            padding: 2px 6px;
+            background: rgba(99, 102, 241, 0.2);
+            color: #818cf8;
+            border-radius: 4px;
+        }
+
+        .blocks-badge {
+            font-size: 10px;
+            padding: 2px 6px;
+            background: rgba(239, 68, 68, 0.2);
+            color: #f87171;
+            border-radius: 4px;
+            margin-left: 6px;
+        }
+
+        .legend {
+            display: flex;
+            gap: 24px;
+            margin-top: 16px;
+            padding: 16px;
+            background: #141419;
+            border-radius: 8px;
+            font-size: 12px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .legend-label {
+            color: #888;
+        }
+
+        @media (max-width: 768px) {
+            .board {
+                flex-direction: column;
+            }
+            .column {
+                min-width: 100%;
+                max-width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🚀 Launchpad Board View</h1>
+        <p>Phase 1 (Pitch) — All 45 tickets organized by feature. Left to right = build order. Vertical order = ticket sequence.</p>
+        <div class="parallel-note">
+            <strong>💡 Parallel Execution:</strong> Columns with <span style="background: linear-gradient(90deg, #6366f1, #8b5cf6); color: white; padding: 2px 8px; border-radius: 4px; font-size: 10px; margin: 0 4px;">purple border</span> can be built simultaneously by different developers — they don't block each other!
+        </div>
+        <div class="github-note">
+            <strong>✅ Auth Ready:</strong> GitHub OAuth is already configured — ACT-5 can start immediately.
+        </div>
+    </div>
+
+    <div class="board">
+        <!-- Authentication -->
+        <div class="column parallel">
+            <div class="column-header">
+                <div class="column-title">🔐 Authentication</div>
+                <div class="column-meta">3 tickets</div>
+                <div class="progress-bar"><div class="progress-fill" style="width: 0%"></div></div>
+            </div>
+            <div class="tickets">
+                <div class="ticket">
+                    <div class="ticket-header">
+                        <span class="ticket-id">ACT-5</span>
+                    </div>
+                    <div class="ticket-title">Set up auth provider & login flow</div>
+                    <div class="ticket-meta">Foundation — must be first (GitHub OAuth ready)</div>
+                </div>
+                <div class="ticket">
+                    <div class="ticket-header">
+                        <span class="ticket-id">ACT-6</span>
+                    </div>
+                    <div class="ticket-title">Create user profile & session management</div>
+                    <div class="ticket-meta"><span class="dep-badge">After ACT-5</span></div>
+                </div>
+                <div class="ticket">
+                    <div class="ticket-header">
+                        <span class="ticket-id">ACT-7</span>
+                    </div>
+                    <div class="ticket-title">Protect routes with middleware</div>
+                    <div class="ticket-meta"><span class="dep-badge">After ACT-5</span></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Dashboard -->
+        <div class="column">
+            <div class="column-header">
+                <div class="column-title">🏠 Dashboard</div>
+                <div class="column-meta">4 tickets</div>
+                <div class="progress-bar"><div class="progress-fill" style="width: 0%"></div></div>
+            </div>
+            <div class="tickets">
+                <div class="ticket">
+                    <div class="ticket-header">
+                        <span class="ticket-id">ACT-8</span>
+                    </div>
+                    <div class="ticket-title">Build projects list page</div>
+                    <div class="ticket-meta"><span class="dep-badge">After ACT-7</span> <span class="blocks-badge">Blocks: ACT-9,10</span></div>
+                </div>
+                <div class="ticket">
+                    <div class="ticket-header">
+                        <span class="ticket-id">ACT-9</span>
+                    </div>
+                    <div class="ticket-title">Add "Start Project" button & empty state</div>
+                    <div class="ticket-meta"><span class="dep-badge">After ACT-8</span></div>
+                </div>
+                <div class="ticket">
+                    <div class="ticket-header">
+                        <span class="ticket-id">ACT-10</span>
+                    </div>
+                    <div class="ticket-title">Build project card component</div>
+                    <div class="ticket-meta"><span class="dep-badge">After ACT-8</span> <span class="blocks-badge">Blocks: ACT-14</span></div>
+                </div>
+                <div class="ticket">
+                    <div class="ticket-header">
+                        <span class="ticket-id">ACT-11</span>
+                    </div>
+                    <div class="ticket-title">Add navigation & layout shell</div>
+                    <div class="ticket-meta"><span class="dep-badge">After ACT-6</span> <span class="blocks-badge">Blocks: ACT-15</span></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Create Project -->
+        <div class="column">
+            <div class="column-header">
+                <div class="column-title">📝 Create Project</div>
+                <div class="column-meta">5 tickets</div>
+                <div class="progress-bar"><div class="progress-fill" style="width: 0%"></div></div>
+            </div>
+            <div class="tickets">
+                <div class="ticket">
+                    <div class="ticket-header">
+                        <span class="ticket-id">ACT-12</span>
+                    </div>
+                    <div class="ticket-title">Build "New Project" form</div>
+                    <div class="ticket-meta"><span class="dep-badge">After ACT-7</span></div>
+                </div>
+                <div class="ticket">
+                    <div class="ticket-header">
+                        <span class="ticket-id">ACT-13</span>
+                    </div>
+                    <div class="ticket-title">Create projects table & API route</div>
+                    <div class="ticket-meta"><span class="dep-badge">After ACT-6</span> <span class="blocks-badge">Blocks: ACT-14</span></div>
+                </div>
+                <div class="ticket">
+                    <div class="ticket-header">
+                        <span class="ticket-id">ACT-14</span>
+                    </div>
+                    <div class="ticket-title">Handle form submission & create project record</div>
+                    <div class="ticket-meta"><span class="dep-badge">After ACT-9, ACT-10, ACT-13</span> <span class="blocks-badge">Blocks: ACT-18</span></div>
+                </div>
+                <div class="ticket">
+                    <div class="ticket-header">
+                        <span class="ticket-id">ACT-15</span>
+                    </div>
+                    <div class="ticket-title">Redirect to project detail page after creation</div>
+                    <div class="ticket-meta"><span class="dep-badge">After ACT-11</span></div>
+                </div>
+                <div class="ticket">
+                    <div class="ticket-header">
+                        <span class="ticket-id">ACT-16</span>
+                    </div>
+                    <div class="ticket-title">Test create flow end-to-end</div>
+                    <div class="ticket-meta"><span class="dep-badge">After ACT-12</span></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Project Detail -->
+        <div class="column">
+            <div class="column-header">
+                <div class="column-title">🎯 Project Detail</div>
+                <div class="column-meta">4 tickets</div>
+                <div class="progress-bar"><div class="progress-fill" style="width: 0%"></div></div>
+            </div>
+            <div class="tickets">
+                <div class="ticket">
+                    <div class="ticket-header">
+                        <span class="ticket-id">ACT-17</span>
+                    </div>
+                    <div class="ticket-title">Build project detail shell</div>
+                    <div class="ticket-meta"><span class="dep-badge">After ACT-12</span></div>
+                </div>
+                <div class="ticket">
+                    <div class="ticket-header">
+                        <span class="ticket-id">ACT-18</span>
+                    </div>
+                    <div class="ticket-title">Display project metadata</div>
+                    <div class="ticket-meta"><span class="dep-badge">After ACT-14</span></div>
+                </div>
+                <div class="ticket">
+                    <div class="ticket-header">
+                        <span class="ticket-id">ACT-19</span>
+                    </div>
+                    <div class="ticket-title">Add "Edit project" button & modal</div>
+                    <div class="ticket-meta"><span class="dep-badge">After ACT-15</span></div>
+                </div>
+                <div class="ticket">
+                    <div class="ticket-header">
+                        <span class="ticket-id">ACT-20</span>
+                    </div>
+                    <div class="ticket-title">Test project detail page</div>
+                    <div class="ticket-meta"><span class="dep-badge">After ACT-16</span></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Guided Questions -->
+        <div class="column">
+            <div class="column-header">
+                <div class="column-title">💡 Guided Questions</div>
+                <div class="column-meta">6 tickets</div>
+                <div class="progress-bar"><div class="progress-fill" style="width: 0%"></div></div>
+            </div>
+            <div class="tickets">
+                <div class="ticket">
+                    <div class="ticket-header">
+                        <span class="ticket-id">ACT-21</span>
+                    </div>
+                    <div class="ticket-title">Research & pick a product discovery framework</div>
+                    <div class="ticket-meta">Foundation — no dependencies</div>
+                </div>
+                <div class="ticket">
+                    <div class="ticket-header">
+                        <span class="ticket-id">ACT-22</span>
+                    </div>
+                    <div class="ticket-title">Design question flow UI</div>
+                    <div class="ticket-meta"><span class="dep-badge">After ACT-18</span></div>
+                </div>
+                <div class="ticket">
+                    <div class="ticket-header">
+                        <span class="ticket-id">ACT-23</span>
+                    </div>
+                    <div class="ticket-title">Build question components</div>
+                    <div class="ticket-meta"><span class="dep-badge">After ACT-19</span></div>
+                </div>
+                <div class="ticket">
+                    <div class="ticket-header">
+                        <span class="ticket-id">ACT-24</span>
+                    </div>
+                    <div class="ticket-title">Store answers in database</div>
+                    <div class="ticket-meta"><span class="dep-badge">After ACT-20</span> <span class="blocks-badge">Blocks: ACT-28</span></div>
+                </div>
+                <div class="ticket">
+                    <div class="ticket-header">
+                        <span class="ticket-id">ACT-25</span>
+                    </div>
+                    <div class="ticket-title">Add progress indicator & navigation</div>
+                    <div class="ticket-meta"><span class="dep-badge">After ACT-21</span></div>
+                </div>
+                <div class="ticket">
+                    <div class="ticket-header">
+                        <span class="ticket-id">ACT-26</span>
+                    </div>
+                    <div class="ticket-title">Test guided question flow</div>
+                    <div class="ticket-meta"><span class="dep-badge">After ACT-22</span> <span class="blocks-badge">Blocks: ACT-30</span></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- AI Breakdown -->
+        <div class="column">
+            <div class="column-header">
+                <div class="column-title">🤖 AI Breakdown</div>
+                <div class="column-meta">5 tickets</div>
+                <div class="progress-bar"><div class="progress-fill" style="width: 0%"></div></div>
+            </div>
+            <div class="tickets">
+                <div class="ticket">
+                    <div class="ticket-header">
+                        <span class="ticket-id">ACT-27</span>
+                    </div>
+                    <div class="ticket-title">Design prompt for project breakdown</div>
+                    <div class="ticket-meta"><span class="dep-badge">After ACT-23</span></div>
+                </div>
+                <div class="ticket">
+                    <div class="ticket-header">
+                        <span class="ticket-id">ACT-28</span>
+                    </div>
+                    <div class="ticket-title">Build API route for AI breakdown</div>
+                    <div class="ticket-meta"><span class="dep-badge">After ACT-24</span> <span class="blocks-badge">Blocks: ACT-32</span></div>
+                </div>
+                <div class="ticket">
+                    <div class="ticket-header">
+                        <span class="ticket-id">ACT-29</span>
+                    </div>
+                    <div class="ticket-title">Parse AI response into structure</div>
+                    <div class="ticket-meta"><span class="dep-badge">After ACT-25</span> <span class="blocks-badge">Blocks: ACT-33</span></div>
+                </div>
+                <div class="ticket">
+                    <div class="ticket-header">
+                        <span class="ticket-id">ACT-30</span>
+                    </div>
+                    <div class="ticket-title">Store breakdown in database</div>
+                    <div class="ticket-meta"><span class="dep-badge">After ACT-26</span></div>
+                </div>
+                <div class="ticket">
+                    <div class="ticket-header">
+                        <span class="ticket-id">ACT-31</span>
+                    </div>
+                    <div class="ticket-title">Test AI breakdown flow</div>
+                    <div class="ticket-meta"><span class="dep-badge">After ACT-27</span></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Ticket Editor -->
+        <div class="column">
+            <div class="column-header">
+                <div class="column-title">🎫 Ticket Editor</div>
+                <div class="column-meta">6 tickets</div>
+                <div class="progress-bar"><div class="progress-fill" style="width: 0%"></div></div>
+            </div>
+            <div class="tickets">
+                <div class="ticket">
+                    <div class="ticket-header">
+                        <span class="ticket-id">ACT-32</span>
+                    </div>
+                    <div class="ticket-title">Build ticket list view</div>
+                    <div class="ticket-meta"><span class="dep-badge">After ACT-28</span></div>
+                </div>
+                <div class="ticket">
+                    <div class="ticket-header">
+                        <span class="ticket-id">ACT-33</span>
+                    </div>
+                    <div class="ticket-title">Build ticket edit modal</div>
+                    <div class="ticket-meta"><span class="dep-badge">After ACT-29</span></div>
+                </div>
+                <div class="ticket">
+                    <div class="ticket-header">
+                        <span class="ticket-id">ACT-34</span>
+                    </div>
+                    <div class="ticket-title">Add inline editing</div>
+                    <div class="ticket-meta"><span class="dep-badge">After ACT-30</span></div>
+                </div>
+                <div class="ticket">
+                    <div class="ticket-header">
+                        <span class="ticket-id">ACT-35</span>
+                    </div>
+                    <div class="ticket-title">Add delete ticket functionality</div>
+                    <div class="ticket-meta"><span class="dep-badge">After ACT-31</span></div>
+                </div>
+                <div class="ticket">
+                    <div class="ticket-header">
+                        <span class="ticket-id">ACT-36</span>
+                    </div>
+                    <div class="ticket-title">Add create new ticket button</div>
+                    <div class="ticket-meta"><span class="dep-badge">After ACT-32</span></div>
+                </div>
+                <div class="ticket">
+                    <div class="ticket-header">
+                        <span class="ticket-id">ACT-37</span>
+                    </div>
+                    <div class="ticket-title">Test all ticket editing operations</div>
+                    <div class="ticket-meta"><span class="dep-badge">After ACT-33</span></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Linear Sync -->
+        <div class="column">
+            <div class="column-header">
+                <div class="column-title">🔗 Linear Sync</div>
+                <div class="column-meta">4 tickets</div>
+                <div class="progress-bar"><div class="progress-fill" style="width: 0%"></div></div>
+            </div>
+            <div class="tickets">
+                <div class="ticket">
+                    <div class="ticket-header">
+                        <span class="ticket-id">ACT-38</span>
+                    </div>
+                    <div class="ticket-title">Add Linear API config to user settings</div>
+                    <div class="ticket-meta"><span class="dep-badge">After ACT-6</span></div>
+                </div>
+                <div class="ticket">
+                    <div class="ticket-header">
+                        <span class="ticket-id">ACT-39</span>
+                    </div>
+                    <div class="ticket-title">Build "Sync to Linear" button</div>
+                    <div class="ticket-meta"><span class="dep-badge">After ACT-35</span></div>
+                </div>
+                <div class="ticket">
+                    <div class="ticket-header">
+                        <span class="ticket-id">ACT-40</span>
+                    </div>
+                    <div class="ticket-title">Map Launchpad tickets → Linear issues</div>
+                    <div class="ticket-meta"><span class="dep-badge">After ACT-36</span></div>
+                </div>
+                <div class="ticket">
+                    <div class="ticket-header">
+                        <span class="ticket-id">ACT-41</span>
+                    </div>
+                    <div class="ticket-title">Test Linear sync end-to-end</div>
+                    <div class="ticket-meta"><span class="dep-badge">After ACT-37</span></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Database -->
+        <div class="column parallel">
+            <div class="column-header">
+                <div class="column-title">📊 Database</div>
+                <div class="column-meta">4 tickets</div>
+                <div class="progress-bar"><div class="progress-fill" style="width: 0%"></div></div>
+            </div>
+            <div class="tickets">
+                <div class="ticket">
+                    <div class="ticket-header">
+                        <span class="ticket-id">ACT-42</span>
+                    </div>
+                    <div class="ticket-title">Design complete database schema</div>
+                    <div class="ticket-meta">No dependencies — can start anytime</div>
+                </div>
+                <div class="ticket">
+                    <div class="ticket-header">
+                        <span class="ticket-id">ACT-43</span>
+                    </div>
+                    <div class="ticket-title">Set up Supabase & create tables</div>
+                    <div class="ticket-meta"><span class="dep-badge">After ACT-39</span></div>
+                </div>
+                <div class="ticket">
+                    <div class="ticket-header">
+                        <span class="ticket-id">ACT-44</span>
+                    </div>
+                    <div class="ticket-title">Add Row Level Security policies</div>
+                    <div class="ticket-meta"><span class="dep-badge">After ACT-40</span></div>
+                </div>
+                <div class="ticket">
+                    <div class="ticket-header">
+                        <span class="ticket-id">ACT-45</span>
+                    </div>
+                    <div class="ticket-title">Test CRUD operations</div>
+                    <div class="ticket-meta"><span class="dep-badge">After ACT-41</span></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Testing & Polish -->
+        <div class="column parallel">
+            <div class="column-header">
+                <div class="column-title">🧪 Testing & Polish</div>
+                <div class="column-meta">4 tickets</div>
+                <div class="progress-bar"><div class="progress-fill" style="width: 0%"></div></div>
+            </div>
+            <div class="tickets">
+                <div class="ticket">
+                    <div class="ticket-header">
+                        <span class="ticket-id">ACT-46</span>
+                    </div>
+                    <div class="ticket-title">Set up test framework</div>
+                    <div class="ticket-meta">No dependencies — can start anytime</div>
+                </div>
+                <div class="ticket">
+                    <div class="ticket-header">
+                        <span class="ticket-id">ACT-47</span>
+                    </div>
+                    <div class="ticket-title">Write critical path tests</div>
+                    <div class="ticket-meta"><span class="dep-badge">After ACT-43</span></div>
+                </div>
+                <div class="ticket">
+                    <div class="ticket-header">
+                        <span class="ticket-id">ACT-48</span>
+                    </div>
+                    <div class="ticket-title">Fix bugs found in testing</div>
+                    <div class="ticket-meta"><span class="dep-badge">After ACT-44</span></div>
+                </div>
+                <div class="ticket">
+                    <div class="ticket-header">
+                        <span class="ticket-id">ACT-49</span>
+                    </div>
+                    <div class="ticket-title">Polish UI & UX</div>
+                    <div class="ticket-meta"><span class="dep-badge">After ACT-45</span></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="legend">
+        <div class="legend-item">
+            <span style="display: inline-block; width: 12px; height: 12px; background: linear-gradient(90deg, #6366f1, #8b5cf6); border-radius: 3px;"></span>
+            <span class="legend-label">Can run in parallel</span>
+        </div>
+        <div class="legend-item">
+            <span class="dep-badge">After ACT-X</span>
+            <span class="legend-label">Dependency</span>
+        </div>
+        <div class="legend-item">
+            <span class="blocks-badge">Blocks: ACT-Y</span>
+            <span class="legend-label">Blocks other tickets</span>
+        </div>
+    </div>
+</body>
+</html>

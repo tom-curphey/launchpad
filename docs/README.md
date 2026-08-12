@@ -8,6 +8,9 @@ Welcome to the Launchpad documentation.
 
 ## Documentation Index
 
+### Tasks
+- **[Development Tasks](Tasks/development-tasks.md)** — Complete task breakdown for Phase 1 (Pitch) implementation
+
 ### Workflows
 - **[Launchpad Documentation](Workflows/launchpad-documentation.md)** — The complete guide to Launchpad
   - The PAD Method (Pitch → Assemble → Deploy)
@@ -29,6 +32,13 @@ Welcome to the Launchpad documentation.
 - Tech stack details
 - Integration guides
 - API reference
+
+### Project Status
+- **[Database Research](database-research.md)** — Wayfinder & Pathfinder analysis, Launchpad vision, and schema inspiration
+
+#### Database Inspo
+- **[Wayfinder CSV](../../../Downloads/Wayfinder.csv)** — Product development & feature management schema
+- **[Pathfinder CSV](../../../Downloads/Pathfinder.csv)** — AI agent management & execution schema
 
 ---
 

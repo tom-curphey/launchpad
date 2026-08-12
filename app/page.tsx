@@ -1,6 +1,9 @@
 import Link from 'next/link';
+import { auth } from '@/lib/auth';
 
-export default function Home() {
+export default async function Home() {
+  const session = await auth();
+
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-100">
       {/* Hero Section */}
@@ -12,13 +15,28 @@ export default function Home() {
         </div>
 
         <div className="relative mx-auto max-w-5xl">
-          <header className="mb-16">
+          <header className="mb-16 flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-amber-400 to-orange-600 flex items-center justify-center text-2xl">
                 🚀
               </div>
               <span className="text-xl font-semibold tracking-tight">Launchpad</span>
             </div>
+            {session?.user ? (
+              <Link
+                href="/dashboard"
+                className="px-4 py-2 bg-gradient-to-r from-amber-500 to-orange-600 text-zinc-950 font-semibold rounded-full hover:from-amber-400 hover:to-orange-500 transition-all text-sm"
+              >
+                Go to Dashboard
+              </Link>
+            ) : (
+              <Link
+                href="/auth/signin"
+                className="px-4 py-2 bg-zinc-800 border border-zinc-700 text-zinc-300 font-semibold rounded-full hover:border-amber-500/50 hover:text-zinc-100 transition-all text-sm"
+              >
+                Sign in
+              </Link>
+            )}
           </header>
 
           <div className="space-y-8">
@@ -39,9 +57,21 @@ export default function Home() {
             </p>
 
             <div className="flex flex-wrap gap-4 pt-4">
-              <button className="px-8 py-4 bg-gradient-to-r from-amber-500 to-orange-600 text-zinc-950 font-semibold rounded-full hover:from-amber-400 hover:to-orange-500 transition-all">
-                Get Early Access
-              </button>
+              {session?.user ? (
+                <Link
+                  href="/dashboard"
+                  className="px-8 py-4 bg-gradient-to-r from-amber-500 to-orange-600 text-zinc-950 font-semibold rounded-full hover:from-amber-400 hover:to-orange-500 transition-all"
+                >
+                  Go to Dashboard
+                </Link>
+              ) : (
+                <Link
+                  href="/auth/signin"
+                  className="px-8 py-4 bg-gradient-to-r from-amber-500 to-orange-600 text-zinc-950 font-semibold rounded-full hover:from-amber-400 hover:to-orange-500 transition-all"
+                >
+                  Get Early Access
+                </Link>
+              )}
               <button className="px-8 py-4 border border-zinc-700 text-zinc-300 font-semibold rounded-full hover:border-amber-500/50 hover:text-zinc-100 transition-all">
                 See How It Works
               </button>

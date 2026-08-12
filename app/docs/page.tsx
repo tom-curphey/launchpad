@@ -72,6 +72,81 @@ const sidebarConfig: DocCategory[] = [
     title: 'Project Status',
     items: [
       {
+        title: 'Decisions',
+        file: 'decisions',
+        content: `# Decisions & Architecture
+
+This document tracks key architectural decisions, reasoning, and context for Launchpad.
+
+## Quick Links
+
+- [Product Vision](#product-vision)
+- [Database Architecture](#database-architecture-decisions)
+- [Reference Databases](#reference-database-analysis)
+- [Build Strategy](#build-strategy)
+- [Authentication](#authentication-setup)
+- [GitHub Integration](#github-integration-requirements)
+- [Scaling Strategy](#scaling-strategy)
+
+## Product Vision
+
+### Target Users
+1. Primary: Solo founders (including the founder)
+2. Secondary: Teams (future consideration)
+
+### Core Userflows
+1. Pitch → Outline Business
+2. Tickets → Organize Work
+3. AI Completes Tasks
+4. AI Creates & Reviews PRs
+5. Human Review
+
+### Tech Stack
+- Next.js 16 (App Router)
+- Tailwind CSS v4
+- Supabase (Postgres)
+- NextAuth v5 with GitHub OAuth
+
+## Database Architecture
+
+**Single Database Approach** ✅
+
+One Supabase database for all data. 20 projects = ~17k rows (trivial for Postgres).
+
+Real bottlenecks: AI token costs, GitHub API rate limits, agent execution time.
+
+## Reference Databases
+
+### Wayfinder (Product Development)
+- Features with RICE, MoSCoW, acceptance criteria
+- Product decision tracking
+- Delivery cycles
+
+### Pathfinder (AI Agent Management)
+- Agent blueprints and packages
+- Action tracking with costs
+- Performance metrics
+
+## Build Strategy
+
+Full userflows, not piecemeal features. Complete pitch → tickets → AI → PR → review flow.
+
+## Authentication
+
+NextAuth v5 with GitHub OAuth. ✅ Complete and working.
+
+## GitHub Integration
+
+Three aspects: AI writes code, creates PRs, runs tests. Human reviews in GitHub.
+
+## Scaling Strategy
+
+Current target: 20 projects. Single database handles this easily. Reconsider at 10,000+ projects.
+
+*See full documentation in the source file for detailed reasoning.*
+`,
+      },
+      {
         title: 'Current Phase',
         file: 'current-phase',
         content: `# Current Phase
@@ -126,6 +201,198 @@ The landing page is live and includes:
 ### Phase 9: Feedback & Evolution (Planned)
 - Customer feedback collection
 - A/B testing coordination
+`,
+      },
+      {
+        title: 'Database Research',
+        file: 'database-research',
+        content: `# Database Research
+
+## Overview
+
+Research into existing database schemas for inspiration in building Launchpad.
+
+## Reference Databases
+
+### Wayfinder
+**Product development & feature management system**
+
+Core tables:
+- \`features\` — Comprehensive feature tracking with acceptance criteria, RICE prioritization, MoSCoW method
+- \`decisions\` — Product decision tracking with questions, options, recommendations
+- \`delivery_cycles\` — Timeboxed releases
+- \`context_documents\` — Product docs storage for AI reference
+- \`activity\` — Full audit log
+
+**Relevance:** Covers pitch → tickets workflow
+
+### Pathfinder
+**AI agent management & execution platform**
+
+Core tables:
+- \`agent_blueprints\` — Agent templates with system prompts, voice, expertise
+- \`agent_packages\` — Pre-packaged agent teams
+- \`agent_actions\` — Track every AI action with token costs
+- \`agent_instructions\` — Custom instructions per project
+- \`agent_model_performance\` — Model performance metrics
+
+**Relevance:** Covers AI execution & PR workflow
+
+## Launchpad Vision
+
+### Target Users
+1. Primary: Solo founders
+2. Secondary: Teams (future)
+
+### Core Userflows
+
+1. **Pitch → Outline Business**
+   - Forms to capture product vision
+   - Define problem, solution, target users
+   - Document decisions with rationale
+
+2. **Tickets → Organize Work**
+   - Create tickets grouped by features/userflows
+   - Test-driven development approach
+   - Acceptance criteria & dependency management
+
+3. **AI Completes Tasks**
+   - AI writes code locally
+   - AI creates pull requests in GitHub
+   - AI runs tests automatically
+
+4. **AI Creates & Reviews PRs**
+   - AI generates pull requests
+   - AI reviews code
+   - AI enforces standards
+
+5. **Human Review**
+   - Review PRs to merge
+   - Pull branches locally to test userflows
+   - Final approval before deployment
+
+## Gaps to Fill
+
+### Missing from Reference Databases:
+
+**Pull Request Workflow**
+- \`pull_requests\` table
+- \`code_reviews\` table
+- States: draft → open → review → approved → merged
+
+**Test Coverage**
+- \`test_cases\` linked to features/tickets
+- \`test_results\` from AI execution
+- TDD enforcement
+
+**Human Review Queue**
+- \`review_queue\` table
+- Work pending human approval
+- Priority, assignment, SLAs
+
+**GitHub Integration Tables**
+- \`github_repos\`
+- \`github_branches\`
+- \`github_sync_status\`
+- Webhook handling
+`,
+      },
+      {
+        title: 'Wayfinder CSV',
+        file: 'wayfinder-csv',
+        content: `# Wayfinder CSV Reference
+
+**Path:** \`~/Downloads/Wayfinder.csv\`
+
+## Key Tables
+
+### features
+Comprehensive feature tracking with:
+- Problem statements, user value, business value
+- User stories, functional requirements, business rules
+- Acceptance criteria, out of scope
+- Priority (1-4), sizing (XS/S/M/L/XL), confidence levels
+- RICE prioritization (reach, impact, value)
+- MoSCoW method
+- Status tracking (idea → in progress → done)
+- Linear integration
+
+### decisions
+Product decision tracking:
+- Question, options, recommendations
+- Final decision + rationale
+- Owner, date decided, status
+- Storyboard linking
+
+### delivery_cycles
+Timeboxed releases with dates
+
+### feature_* junction tables
+Dependencies between features and links to:
+- Goals, hypotheses, risks, pain points, users, findings
+- Jobs-to-be-done mapping
+
+### context_documents
+Product docs storage:
+- Files for AI reference
+- MIME types, sizes, content or paths
+- Marked for AI use
+
+### activity
+Full audit log
+
+**Relevance to Launchpad:** Covers pitch → tickets workflow
+`,
+      },
+      {
+        title: 'Pathfinder CSV',
+        file: 'pathfinder-csv',
+        content: `# Pathfinder CSV Reference
+
+**Path:** \`~/Downloads/Pathfinder.csv\`
+
+## Key Tables
+
+### agent_blueprints
+Agent templates with:
+- System prompts, voice/personality
+- Expertise areas, approach, constraints
+- Recommended skills & rules
+- Model preferences (Anthropic, Claude Sonnet, etc.)
+- Autonomy levels
+
+### agent_packages
+Pre-packaged agent teams:
+- Multiple agents, skills, rules, instructions bundled
+- Team size, org chart
+- Categories, tags
+
+### agent_actions
+Track every AI action:
+- Token costs
+- Status (pending/success/failed)
+- Entity references
+- Execution timestamps
+
+### agent_instructions
+Custom instructions per project/org
+
+### agent_config_revisions
+Version history for config changes
+
+### agent_model_performance
+Model performance metrics:
+- Success/failure rates
+- Average token usage
+- Per-task-category tracking
+
+### access_codes
+Invite codes with plans, expiry
+
+### activity_events
+Full audit log
+
+**Relevance to Launchpad:** Covers AI execution & PR workflow
 `,
       },
     ],
