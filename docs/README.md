@@ -10,6 +10,7 @@ Welcome to the Launchpad documentation.
 
 ### Tasks
 - **[Development Tasks](Tasks/development-tasks.md)** — Complete task breakdown for Phase 1 (Pitch) implementation
+- **[ACT-20 Testing Checklist](ACT-20-testing-checklist.md)** — Interactive testing checklist for project detail page
 
 ### Workflows
 - **[Launchpad Documentation](Workflows/launchpad-documentation.md)** — The complete guide to Launchpad

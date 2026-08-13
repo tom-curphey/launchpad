@@ -1,10 +1,14 @@
 "use client"
 
 import { signIn } from "next-auth/react"
+import { useSearchParams } from "next/navigation"
 
 export default function SignIn() {
+  const searchParams = useSearchParams()
+  const callbackUrl = searchParams.get("callbackUrl") || "/dashboard"
+
   const handleSignIn = () => {
-    signIn("github", { callbackUrl: "/dashboard" })
+    signIn("github", { callbackUrl })
   }
 
   return (
