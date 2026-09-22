@@ -13,7 +13,11 @@ export async function GET(request: Request) {
   try {
     // Map doc names to file paths
     const docMap: Record<string, string> = {
-      'launchpad-documentation': 'docs/Workflows/launchpad-documentation.md',
+      'launchpad-documentation': 'docs/product/overview.md',
+      'draft-tickets-linear-sync': 'docs/product/tickets/draft-ticket.md',
+      'architecture-decisions': 'docs/product/decision-docs.md',
+      'ticket-assignment-decisions': 'docs/product/tickets/assignment.md',
+      'openclaw-workflow': 'docs/_archive/product/openclaw-workflow.md',
     };
 
     const filePath = docMap[doc];

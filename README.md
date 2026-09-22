@@ -61,7 +61,7 @@ pnpm dev
 
 Comprehensive documentation is in the `/docs` folder:
 
-- **[Launchpad Documentation](docs/Workflows/launchpad-documentation.md)** — Complete product overview
+- **[Launchpad Documentation](docs/product/overview.md)** — Complete product overview
 - **[Docs Index](docs/README.md)** — Documentation navigation
 
 ## Tech Stack
@@ -73,7 +73,7 @@ Comprehensive documentation is in the `/docs` folder:
 ## Learn More
 
 - Visit [launchpad.app](https://launchpad.app) *(coming soon)*
-- Read the [full documentation](docs/Workflows/launchpad-documentation.md)
+- Read the [full documentation](docs/product/overview.md)
 - Check out the [landing page](app/page.tsx) source
 
 ---

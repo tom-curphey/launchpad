@@ -673,6 +673,253 @@ List any bugs or issues discovered during testing:
     ],
   },
   {
+    title: 'Feature Specs',
+    items: [
+      {
+        title: 'Draft Tickets & Linear Sync',
+        file: 'draft-tickets-linear-sync',
+        content: `# AI Ticket Breakdown & Linear Sync Design
+
+**Date:** 2026-08-17
+**Feature:** AI-generated tickets from pitch answers with Linear integration
+**Status:** Design approved, awaiting implementation plan
+
+## Overview
+
+Transform user's pitch answers into actionable, reviewable tickets that can be synced to Linear. Each ticket is human-sized (≤1 day completion, 10-15 min PR review) with a single testable outcome.
+
+## User Flow
+
+\`\`\`
+1. User completes pitch questions → pitch_answers stored in projects table
+2. Click "Generate Tickets" → AI analyzes all answers → returns structured ticket breakdown
+3. Board view displays tickets by column/phase → user can edit/delete/reorder
+4. User reviews in side panel (600px slider) → adjustments as needed
+5. Click "Submit to Linear" → creates milestones & issues in Linear
+6. Linear becomes source of truth → LaunchPad polls for status display
+\`\`\`
+
+## Architecture
+
+\`\`\`
+┌─────────────────┐
+│ Pitch Answers   │ (projects.pitch_answers JSONB)
+└────────┬────────┘
+         │
+         ▼
+┌─────────────────┐
+│ AI Breakdown    │ (POST /generate-tickets)
+│    Service      │ (LLM with structured prompt)
+└────────┬────────┘
+         │
+         ▼
+┌─────────────────┐
+│ Draft Tickets   │ (projects.draft_tickets JSONB)
+│   Storage       │ (persists across sessions)
+└────────┬────────┘
+         │
+         ▼
+┌─────────────────┐
+│  Board View UI  │ (Kanban with side panel editor)
+│   + CRUD        │ (fully interactive, slider panel)
+└────────┬────────┘
+         │
+         ▼
+┌─────────────────┐
+│ Linear Submit   │ (POST /submit)
+│                 │ (creates milestones, issues, deps)
+└────────┬────────┘
+         │
+         ▼
+┌─────────────────┐
+│ Linear Poll     │ (GET /ticket-status)
+│   for Status    │ (reads back from Linear)
+└─────────────────┘
+\`\`\`
+
+## Ticket Generation Constraints
+
+**AI must generate tickets that satisfy:**
+
+1. **Single outcome** - One clear thing accomplished per ticket
+2. **Human-sized** - Completable in ≤1 day without AI assistance
+3. **Review-sized PR** - Code review takes 10-15 minutes
+4. **Testable** - Clear verification criteria
+
+**Anti-patterns to avoid:**
+- "Build authentication system" (too broad)
+- "Fix bugs" (not specific)
+- "Setup" (not an outcome)
+
+**Good examples:**
+- "Set up auth provider & login flow"
+- "Build projects list page"
+- "Add 'Start Project' button & empty state"
+
+## Data Structures
+
+### Draft Tickets Storage
+
+**Schema addition:**
+\`\`\`sql
+ALTER TABLE projects
+ADD COLUMN draft_tickets JSONB DEFAULT '{
+  "columns": [],
+  "generatedAt": null,
+  "linearProjectId": null,
+  "submittedAt": null
+}'::jsonb;
+
+ALTER TABLE projects
+ADD COLUMN linear_team_id TEXT,
+ADD COLUMN linear_project_id TEXT;
+\`\`\`
+
+**Structure:**
+\`\`\`json
+{
+  "columns": [
+    {
+      "id": "auth",
+      "name": "🔐 Authentication",
+      "dependsOnColumns": [],
+      "milestone": "P1: Authentication",
+      "tickets": [
+        {
+          "id": "ACT-5",
+          "title": "Set up auth provider & login flow",
+          "description": "Foundation — must be first (GitHub OAuth ready)",
+          "deps": [],
+          "blocks": ["ACT-6", "ACT-7"],
+          "order": 0
+        }
+      ]
+    }
+  ],
+  "generatedAt": "2026-08-17T10:30:00Z"
+}
+\`\`\`
+
+## API Endpoints
+
+| Endpoint | Method | Purpose |
+|----------|--------|---------|
+| \`/api/projects/[id]/generate-tickets\` | POST | AI generates tickets from pitch_answers |
+| \`/api/projects/[id]/draft-tickets\` | GET | Read draft_tickets for board view |
+| \`/api/projects/[id]/draft-tickets\` | PUT | Update draft_tickets (CRUD) |
+| \`/api/projects/[id]/submit\` | POST | Push tickets to Linear |
+| \`/api/projects/[id]/ticket-status\` | GET | Poll Linear for ticket status |
+
+## AI Agent Approach
+
+**Agent-based (not one-shot SDK)** for multi-step reasoning:
+
+**Agent Responsibilities:**
+1. **Analyze pitch_answers** — Understand product vision from 45+ questions
+2. **Identify feature areas** — Group into coherent columns
+3. **Break down to tickets** — Apply sizing rules (≤1 day, 10-15 min PR review)
+4. **Validate dependencies** — Ensure technical correctness
+5. **Structure output** — Format as JSON with phases calculated
+
+**Model:** Fable (claude-fable-5)
+
+**Agent Tools:**
+- \`validateTicketSize\` — Check if ticket scope is appropriate
+- \`identifyDependencies\` — Analyze technical relationships
+- \`detectGaps\` — Find missing work items
+- \`calculatePhases\` — Derive phases from column dependencies
+
+## UI Components
+
+**Board View Layout:**
+\`\`\`
+┌─────────────────────────────────────────────────────────┐
+│ Header: Project Name | Progress | Sync Button           │
+├───────────────────────────────────┬───────────────────┤
+│ P1 (Foundation)                   │ │ Ticket Panel     │
+│ ┌────────┐ ┌────────┐ ┌────────┐ │ │ ┌─────────────┐ │
+│ │  Auth  │ │Database│ │Testing │ │ │ │ Title       │ │
+│ │ 3 tix  │ │ 4 tix  │ │ 4 tix  │ │ │ ├─┴─────────────┤ │
+│ └────────┘ └────────┘ └────────┘ │ │ │ Description │ │
+│                                   │ │ │             │ │
+│ P2 (Core Features)                │ │ │ Dependencies│ │
+│ ┌────────┐ ┌────────┐            │ │ │             │ │
+│ │Dashboard│ │Create  │            │ │ │ [Save]      │ │
+│ │ 4 tix  │ │ 5 tix  │            │ │ └─────────────┘ │
+│ └────────┘ └────────┘            │ │                 │
+└───────────────────────────────────┴───────────────────┘
+\`\`\`
+
+**Ticket Panel Features:**
+- Slides in from right (600px default, resizable)
+- Board stays interactive while panel open
+- Click different ticket → panel updates
+- Optimistic updates with debounced save
+
+## Linear Integration
+
+**LaunchPad → Linear Translation:**
+- LaunchPad **columns** → Linear **milestones**
+- LaunchPad **tickets** → Linear **issues** (within milestones)
+- LaunchPad **column deps** → Linear **milestone dependencies**
+
+**On Submit:**
+1. Create Linear project (or use existing)
+2. For each column: create milestone with target date
+3. For each ticket: create issue in that milestone
+4. For each column dependency: create milestone dependency
+5. Store all mappings for status polling
+
+## Implementation Steps
+
+1. **Database schema** — Add \`draft_tickets\`, \`linear_*\` columns
+2. **AI Agent** — Multi-step ticket generation with Fable model
+3. **Generate API** — \`/generate-tickets\` endpoint
+4. **CRUD API** — \`/draft-tickets\` GET/PUT endpoints
+5. **Board UI** — Kanban layout, phase headers, ticket cards
+6. **Side Panel** — Slider with edit form, resizable
+7. **Linear Submit** — \`/submit\` endpoint, milestone/issue creation
+8. **Status Polling** — \`/ticket-status\` endpoint, display updates
+9. **Polish & Test** — End-to-end flow with real Linear project
+
+## Success Criteria
+
+- ✅ AI generates 30-50 well-scoped tickets from pitch answers
+- ✅ Tickets are human-sized (≤1 day, 10-15 min PR review)
+- ✅ Board view matches reference design
+- ✅ Side panel allows editing while board stays interactive
+- ✅ Column dependencies correctly calculate phases
+- ✅ Linear sync creates milestones, issues, and dependencies
+- ✅ Status polling displays current Linear state
+- ✅ Drafts persist across page refreshes
+`,
+      },
+    ],
+  },
+  {
+    title: 'Architecture',
+    items: [
+      {
+        title: 'Architecture Decisions',
+        file: 'architecture-decisions',
+        content:
+          '# Architecture Decisions\n\nThis document is loaded from `docs/product/decision-docs.md`.\n\nIf you are seeing this placeholder, the file fetch failed — check that the file exists in the repo.',
+      },
+      {
+        title: 'Ticket Assignment & Execution',
+        file: 'ticket-assignment-decisions',
+        content:
+          '# Ticket Assignment & Execution Decisions\n\nThis document is loaded from `docs/product/assignment.md`.\n\nIf you are seeing this placeholder, the file fetch failed — check that the file exists in the repo.',
+      },
+      {
+        title: 'Full Workflow with OpenClaw',
+        file: 'openclaw-workflow',
+        content:
+          '# Full Workflow with OpenClaw\n\nThis document is loaded from `docs/product/openclaw-workflow.md`.\n\nIf you are seeing this placeholder, the file fetch failed — check that the file exists in the repo.',
+      },
+    ],
+  },
+  {
     title: 'Tech Stack',
     items: [
       {
@@ -728,26 +975,25 @@ export default function DocsPage() {
   const [docContent, setDocContent] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
-  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set(['Getting Started']));
+  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set(['Getting Started', 'Architecture']));
 
   // Load doc content
   useEffect(() => {
     const loadDoc = async () => {
       setIsLoading(true);
 
-      // For full documentation, fetch from API
-      if (selectedDoc === 'launchpad-documentation') {
-        try {
-          const response = await fetch(`/api/docs?doc=launchpad-documentation`);
-          const data = await response.json();
-          if (data.content) {
-            setDocContent(data.content);
-            setIsLoading(false);
-            return;
-          }
-        } catch (error) {
-          console.error('Failed to fetch doc:', error);
+      // File-backed docs are fetched from the repo via the API (single source of
+      // truth); anything not in the API's docMap falls back to hardcoded content
+      try {
+        const response = await fetch(`/api/docs?doc=${selectedDoc}`);
+        const data = await response.json();
+        if (data.content) {
+          setDocContent(data.content);
+          setIsLoading(false);
+          return;
         }
+      } catch (error) {
+        console.error('Failed to fetch doc:', error);
       }
 
       // Fall back to hardcoded content for other docs
@@ -959,12 +1205,27 @@ function renderMarkdown(markdown: string): string {
   // Escape HTML tags first
   html = html.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
-  // Code blocks (must be before inline code)
+  // Stash fenced code blocks into placeholders so no other rule (indents,
+  // tables, inline code) chews their content — ASCII workflow diagrams live here
+  const codeBlocks: string[] = [];
+  const stashFences = (source: string) =>
+    source.replace(/```(\w+)?\n([\s\S]*?)```/g, (_, lang, code) => {
+      const index = codeBlocks.length;
+      codeBlocks.push(
+        `<pre class="bg-zinc-900 p-4 rounded-lg overflow-x-auto text-sm my-4 border border-zinc-800"><code class="language-${lang || 'text'}">${code}</code></pre>`
+      );
+      return `\n\x00CODE${index}\x00\n`;
+    });
+
+  html = stashFences(html);
+
+  // 4-space-indented blocks (the assignment docs use these heavily for
+  // ticket/assignment examples) — convert to fenced blocks, then stash too
   html = html.replace(
-    /```(\w+)?\n([\s\S]*?)```/g,
-    (_, lang, code) =>
-      `<pre class="bg-zinc-900 p-4 rounded-lg overflow-x-auto text-sm my-4 border border-zinc-800"><code class="language-${lang || 'text'}">${code}</code></pre>`
+    /(?:^|\n)((?:    [^\n]*\n)+)/g,
+    (_, block) => `\n\`\`\`\n${block.replace(/^    /gm, '')}\`\`\`\n`
   );
+  html = stashFences(html);
 
   // Inline code
   html = html.replace(
@@ -995,10 +1256,10 @@ function renderMarkdown(markdown: string): string {
   html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
   html = html.replace(/\*([^*]+)\*/g, '<em>$1</em>');
 
-  // Links
+  // Links (same tab)
   html = html.replace(
     /\[([^\]]+)\]\(([^)]+)\)/g,
-    '<a href="$2" class="text-amber-400 hover:text-amber-300 hover:underline" target="_blank" rel="noopener noreferrer">$1</a>'
+    '<a href="$2" class="text-amber-400 hover:text-amber-300 hover:underline">$1</a>'
   );
 
   // Blockquotes
@@ -1062,6 +1323,13 @@ function renderMarkdown(markdown: string): string {
       '<$1>'
     )
     .replace(/(<\/(h[1-6]|ul|ol|li|blockquote|hr|pre)>)<\/p>/g, '$1');
+
+  // Restore stashed code blocks, unwrapping the empty paragraph around them
+  html = html.replace(
+    /<p class="my-4 leading-relaxed text-zinc-400">(\x00CODE\d+\x00)<\/p>/g,
+    '$1'
+  );
+  html = html.replace(/\x00CODE(\d+)\x00/g, (_, index) => codeBlocks[Number(index)]);
 
   return html;
 }
