@@ -18,7 +18,7 @@ The full list lives in `.env.example`.
 
 | Group | Variables (indicative) |
 |---|---|
-| Supabase | `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY` |
+| Supabase | `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_DB_URL` (Postgres connection string, used to run migrations) |
 | GitHub | `GITHUB_ORG`, OAuth client ID and secret (configured in Supabase Auth), GitHub App ID, private key and webhook secret |
 | Linear | `LINEAR_API_KEY`, `LINEAR_WEBHOOK_SECRET` |
 | PostHog | `NEXT_PUBLIC_POSTHOG_KEY`, `NEXT_PUBLIC_POSTHOG_HOST` |
