@@ -1,0 +1,17 @@
+# Scope — Launch
+
+> What must exist before giving the product to real users?
+
+**Status:** Not started · **Updated:** —
+
+## Decision
+
+_Not decided yet._
+
+## Why
+
+## Alternatives considered
+
+## Current implementation
+
+## Related
