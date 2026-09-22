@@ -1,0 +1,5 @@
+/Users/tom/code/launchPad/.agents/skills/graphify/skill-droid.md
+/Users/tom/code/launchPad/.agents/skills/graphify/skill-kilo.md
+/Users/tom/code/launchPad/.agents/skills/graphify/skill-kiro.md
+/Users/tom/code/launchPad/.agents/skills/graphify/skill-opencode.md
+/Users/tom/code/launchPad/.agents/skills/graphify/skill-pi.md

@@ -1,0 +1,11 @@
+/Users/tom/code/launchPad/.agents/skills/graphify/always_on/agents-md.md
+/Users/tom/code/launchPad/.agents/skills/graphify/always_on/antigravity-rules.md
+/Users/tom/code/launchPad/.agents/skills/graphify/always_on/claude-md.md
+/Users/tom/code/launchPad/.agents/skills/graphify/always_on/gemini-md.md
+/Users/tom/code/launchPad/.agents/skills/graphify/always_on/kiro-steering.md
+/Users/tom/code/launchPad/.agents/skills/graphify/always_on/vscode-instructions.md
+/Users/tom/code/launchPad/.agents/skills/graphify/command-kilo.md
+/Users/tom/code/launchPad/.agents/skills/graphify/extractors/MIGRATION.md
+/Users/tom/code/launchPad/.agents/skills/graphify/skill-agents.md
+/Users/tom/code/launchPad/.agents/skills/graphify/skill-aider.md
+/Users/tom/code/launchPad/.agents/skills/graphify/skill-amp.md
